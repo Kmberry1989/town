@@ -4,6 +4,7 @@ import { setScene, rebuildInstances } from './chunkManager'
 import { useStore } from './store'
 import { hydrate, subscribeChanges, placeIntent, removeIntent } from './supabase'
 import { setupControls } from './controls'
+import { makeMesh } from './items'
 
 const canvas = document.getElementById('c') as HTMLCanvasElement
 const renderer = createRenderer(canvas)
@@ -57,6 +58,17 @@ canvas.addEventListener('click', async (e) => {
     await placeIntent('cube', x, 0, z, 0)
   }
 })
+
+const blocks = new Map<string, THREE.Object3D>()
+
+async function addBlock(data: any) {
+  const k = `${data.x},${data.y},${data.z}`
+  if (blocks.has(k)) return
+  const mesh = await makeMesh(data.item_id)
+  mesh.position.set(data.x, data.y, data.z)
+  scene.add(mesh)
+  blocks.set(k, mesh)
+}
 
 await hydrate()
 subscribeChanges(() => {

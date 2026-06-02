@@ -4,7 +4,15 @@ import { useStore } from './store'
 import { Placeable } from './types'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string
-const anon = import.meta.env.VITE_SUPABASE_ANON as string
+const anon = (import.meta.env.VITE_SUPABASE_ANON || import.meta.env.VITE_SUPABASE_ANON_KEY) as string
+
+console.log(import.meta.env.VITE_SUPABASE_URL)
+console.log((import.meta.env.VITE_SUPABASE_ANON || import.meta.env.VITE_SUPABASE_ANON_KEY)?.slice(0, 10))
+
+if (!url || !anon) {
+  throw new Error('Missing Supabase env. Expected VITE_SUPABASE_URL and either VITE_SUPABASE_ANON or VITE_SUPABASE_ANON_KEY.')
+}
+
 export const supabase = createClient(url, anon)
 
 let lastSync = new Date(0).toISOString()
