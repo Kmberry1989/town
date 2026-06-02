@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>PWA Town</title>
+<style>
+html,body{margin:0;height:100%;background:#0b0f14;overflow:hidden;touch-action:none}
+#ui{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none}
+#joy{position:absolute;left:20px;bottom:20px;width:140px;height:140px;pointer-events:auto}
+#action{position:absolute;right:20px;bottom:20px;width:80px;height:80px;border-radius:40px;background:#2dd4bf;opacity:0.9;pointer-events:auto}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="joy"></div>
+  <div id="action"></div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
