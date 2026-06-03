@@ -14,7 +14,8 @@ export default defineConfig({
         icons: []
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // add glb so your tree/house/rock get precached
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,glb}'],
         runtimeCaching: [
           {
             urlPattern: ({url}) => url.pathname.endsWith('.ktx2') || url.pathname.endsWith('.glb'),
@@ -28,5 +29,18 @@ export default defineConfig({
       }
     })
   ],
-  server: { host: true }
+  server: { host: true },
+
+  // --- FIX FOR VERCEL BUILD ---
+  build: {
+    target: 'es2022' // top-level await needs ES2022+
+  },
+  esbuild: {
+    target: 'es2022'
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2022'
+    }
+  }
 })
