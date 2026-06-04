@@ -1,41 +1,49 @@
-import nipplejs from 'nipplejs'
-import Hammer from 'hammerjs'
+import * as THREE from 'three'
+import { supabase } from './supabase'
 
-export function setupControls(joyEl: HTMLElement, actionEl: HTMLElement, canvas: HTMLElement, onMove: (x:number,y:number)=>void, onRotate: (delta:number)=>void, onPinch: (scale:number)=>void, onTapAction: ()=>void, onLongPressAction: ()=>void) {
-  const manager = nipplejs.create({
-    zone: joyEl,
-    mode: 'static',
-    position: { left: '70px', top: '70px' },
-    size: 120,
-    restOpacity: 0.8
-  })
-  manager.on('move', (_, data) => {
-    if (!data.vector) return
-    const v = data.vector
-    const len = Math.hypot(v.x, v.y)
-    const dz = 0.2
-    if (len < dz) return onMove(0,0)
-    const nx = v.x / len * ((len - dz) / (1 - dz))
-    const ny = v.y / len * ((len - dz) / (1 - dz))
-    onMove(nx, ny)
-  })
-  manager.on('end', () => onMove(0,0))
+export function setupControls(camera: THREE.Camera, renderer: THREE.WebGLRenderer, scene: THREE.Scene, getActiveItem: () => string) {
+  // block the menu everywhere over the canvas
+  window.addEventListener('contextmenu', (e) => e.preventDefault(), { capture: true })
 
-  const hammer = new Hammer(canvas)
-  hammer.get('pinch').set({ enable: true })
-  hammer.get('rotate').set({ enable: true })
-  hammer.on('pinch', e => onPinch(e.scale))
-  hammer.on('rotate', e => onRotate(e.rotation * Math.PI / 180))
+  const raycaster = new THREE.Raycaster()
+  const mouse = new THREE.Vector2()
 
-  let pressTimer: number | null = null
-  const start = () => {
-    pressTimer = window.setTimeout(() => {
-      pressTimer = null
-      onLongPressAction()
-    }, 500)
+  const ground = scene.getObjectByName('ground') as THREE.Mesh || new THREE.Mesh(
+    new THREE.PlaneGeometry(200,200),
+    new THREE.MeshBasicMaterial({ visible: false })
+  )
+  if (!scene.getObjectByName('ground')) {
+    ground.rotation.x = -Math.PI/2
+    ground.name = 'ground'
+    scene.add(ground)
   }
-  const cancel = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; onTapAction() } }
-  actionEl.addEventListener('pointerdown', start)
-  actionEl.addEventListener('pointerup', cancel)
-  actionEl.addEventListener('pointerleave', () => { if (pressTimer) clearTimeout(pressTimer) })
+
+  renderer.domElement.addEventListener('pointerdown', async (e) => {
+    e.preventDefault()
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera(mouse, camera)
+    const hits = raycaster.intersectObjects(scene.children, true)
+    if (!hits.length) return
+
+    const point = hits[0].point
+    const x = Math.floor(point.x + 0.5)
+    const y = 0
+    const z = Math.floor(point.z + 0.5)
+
+    console.log('click', e.button, x, y, z) // <-- debug
+
+    const body = {
+      item_id: getActiveItem(),
+      x, y, z,
+      rotation_index: 0,
+      client_req_id: crypto.randomUUID()
+    }
+
+    if (e.button === 0) {
+      await supabase.functions.invoke('place_item', { body })
+    } else if (e.button === 2) {
+      await supabase.functions.invoke('remove_item', { body: {...body, world_id: 'main' } })
+    }
+  })
 }
